@@ -1,0 +1,81 @@
+
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Factor Analysis Report</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                .header { background-color: #f4f4f4; padding: 20px; border-radius: 5px; }
+                .summary { margin: 20px 0; }
+                table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+                th { background-color: #f2f2f2; }
+                .positive { color: green; }
+                .negative { color: red; }
+                .section { margin: 30px 0; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Factor Analysis Report</h1>
+                <p>Generated on: 2025-10-07 14:30:00</p>
+            </div>
+
+            <div class="section">
+                <h2>Performance Summary</h2>
+                
+        <table>
+            <tr>
+                <th>Factor</th>
+                <th>Mean IC</th>
+                <th>IC IR</th>
+                <th>TMB Return (Ann)</th>
+                <th>TMB Sharpe</th>
+                <th>TMB t-stat</th>
+                <th>Significance</th>
+            </tr>
+        
+            <tr>
+                <td><b>MOM_21</b></td>
+                <td>0.0151</td>
+                <td>0.0377</td>
+                <td class="positive">2.1209%</td>
+                <td>1.4885</td>
+                <td>3.5272</td>
+                <td class="positive">***</td>
+            </tr>
+            
+            <tr>
+                <td><b>SIZE</b></td>
+                <td>0.0123</td>
+                <td>0.0352</td>
+                <td class="">-0.4257%</td>
+                <td>-0.4029</td>
+                <td>-0.9618</td>
+                <td class=""></td>
+            </tr>
+            
+            <tr>
+                <td><b>VALUE</b></td>
+                <td>-0.1051</td>
+                <td>-0.2289</td>
+                <td class="negative">-4.5136%</td>
+                <td>-2.8993</td>
+                <td>-6.9211</td>
+                <td class="negative">***</td>
+            </tr>
+            </table>
+            </div>
+
+            <div class="section">
+                <h2>Key Findings</h2>
+                <ul><li><b>Best Performing Factor:</b> MOM_21 (Sharpe: 1.4885)</li><li><b>Worst Performing Factor:</b> VALUE (Sharpe: -2.8993)</li><li><b>Statistically Significant Factors:</b> 2 out of 3</li></ul>
+            </div>
+
+            <div class="section">
+                <h2>Recommendations</h2>
+                <ul><li>Consider incorporating <b>MOM_21</b> in your strategy (Sharpe: 1.4885)</li><li>Avoid or short <b>VALUE</b> (Negative performance: -2.8993)</li><li>Always conduct out-of-sample testing before live trading</li><li>Consider factor combination and risk management</li></ul>
+            </div>
+        </body>
+        </html>
+        

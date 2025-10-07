@@ -1,0 +1,23 @@
+factor_analysis/
+├── main.py
+├── config/
+│   ├── __init__.py
+│   └── settings.py
+├── data/
+│   ├── __init__.py
+│   ├── data_loader.py
+│   └── data_processor.py
+├── factors/
+│   ├── __init__.py
+│   ├── factor_base.py
+│   └── factor_library.py
+├── analysis/
+│   ├── __init__.py
+│   ├── factor_test.py
+│   └── performance.py
+├── visualization/
+│   ├── __init__.py
+│   └── plotter.py
+└── utils/
+    ├── __init__.py
+    └── helpers.py
