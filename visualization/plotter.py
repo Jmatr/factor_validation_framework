@@ -13,7 +13,7 @@ class FactorPlotter:
             plt.style.use('default')
         self.fig_size = FIG_SIZE
 
-        # 设置中文字体（如果需要显示中文）
+        # Set Chinese font (if needed for Chinese display)
         plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial']
         plt.rcParams['axes.unicode_minus'] = False
 
@@ -165,14 +165,14 @@ class FactorPlotter:
         bars = axes[1, 0].bar(factor_names, tmb_returns,
                               color=plt.cm.Set3(np.linspace(0, 1, len(factor_names))))
         axes[1, 0].set_title('Annualized Top Minus Bottom Return')
-        axes[1, 0].set_ylabel('Annual Return')
+        axes[1, 0].set_ylabel('Annual Return (%)')
         axes[1, 0].tick_params(axis='x', rotation=45)
         axes[1, 0].grid(True, alpha=0.3)
 
         for bar in bars:
             height = bar.get_height()
             axes[1, 0].text(bar.get_x() + bar.get_width() / 2., height,
-                            f'{height:.4f}', ha='center', va='bottom')
+                            f'{height:.2f}%', ha='center', va='bottom')
 
         # TMB t-statistics
         tmb_tstats = [result['results']['tmb_tstat'] for result in factors_results]
@@ -246,4 +246,73 @@ class FactorPlotter:
         # Add colorbar
         plt.colorbar(im, ax=ax)
 
+        return fig
+
+    def plot_backtest_results(self, backtest_results):
+        """Plot backtest results for multiple factors"""
+        if not backtest_results:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            ax.text(0.5, 0.5, 'No backtest results available',
+                    horizontalalignment='center', verticalalignment='center',
+                    transform=ax.transAxes, fontsize=14)
+            return fig
+
+        fig, axes = plt.subplots(2, 2, figsize=(15, 12))
+        fig.suptitle('Backtest Performance Comparison', fontsize=16)
+
+        # Cumulative returns comparison
+        for factor_name, results in backtest_results.items():
+            axes[0, 0].plot(results['cumulative_returns'].index,
+                            results['cumulative_returns'].values,
+                            label=factor_name, linewidth=2)
+        axes[0, 0].set_title('Cumulative Returns')
+        axes[0, 0].set_ylabel('Cumulative Return')
+        axes[0, 0].legend()
+        axes[0, 0].grid(True, alpha=0.3)
+
+        # Sharpe ratios comparison
+        sharpe_ratios = [results['metrics']['sharpe_ratio'] for results in backtest_results.values()]
+        factor_names = list(backtest_results.keys())
+
+        bars = axes[0, 1].bar(factor_names, sharpe_ratios,
+                              color=plt.cm.Set3(np.linspace(0, 1, len(factor_names))))
+        axes[0, 1].set_title('Sharpe Ratios')
+        axes[0, 1].set_ylabel('Sharpe Ratio')
+        axes[0, 1].tick_params(axis='x', rotation=45)
+        axes[0, 1].grid(True, alpha=0.3)
+
+        for bar in bars:
+            height = bar.get_height()
+            axes[0, 1].text(bar.get_x() + bar.get_width() / 2., height,
+                            f'{height:.2f}', ha='center', va='bottom')
+
+        # Maximum drawdown comparison
+        max_drawdowns = [abs(results['metrics']['max_drawdown']) for results in backtest_results.values()]
+        bars = axes[1, 0].bar(factor_names, max_drawdowns,
+                              color=plt.cm.Set3(np.linspace(0, 1, len(factor_names))))
+        axes[1, 0].set_title('Maximum Drawdown')
+        axes[1, 0].set_ylabel('Max Drawdown')
+        axes[1, 0].tick_params(axis='x', rotation=45)
+        axes[1, 0].grid(True, alpha=0.3)
+
+        for bar in bars:
+            height = bar.get_height()
+            axes[1, 0].text(bar.get_x() + bar.get_width() / 2., height,
+                            f'{height:.2%}', ha='center', va='bottom')
+
+        # Win rate comparison
+        win_rates = [results['metrics']['win_rate'] for results in backtest_results.values()]
+        bars = axes[1, 1].bar(factor_names, win_rates,
+                              color=plt.cm.Set3(np.linspace(0, 1, len(factor_names))))
+        axes[1, 1].set_title('Win Rate')
+        axes[1, 1].set_ylabel('Win Rate')
+        axes[1, 1].tick_params(axis='x', rotation=45)
+        axes[1, 1].grid(True, alpha=0.3)
+
+        for bar in bars:
+            height = bar.get_height()
+            axes[1, 1].text(bar.get_x() + bar.get_width() / 2., height,
+                            f'{height:.2%}', ha='center', va='bottom')
+
+        plt.tight_layout()
         return fig

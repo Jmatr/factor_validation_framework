@@ -1,8 +1,10 @@
-factor_analysis/
+factor_validation_framework/
 ├── main.py
+├── requirements.txt
 ├── config/
 │   ├── __init__.py
-│   └── settings.py
+│   ├── settings.py
+│   └── factor_configs.py
 ├── data/
 │   ├── __init__.py
 │   ├── data_loader.py
@@ -10,14 +12,24 @@ factor_analysis/
 ├── factors/
 │   ├── __init__.py
 │   ├── factor_base.py
-│   └── factor_library.py
+│   ├── factor_library.py
+│   ├── enhanced_factors.py
+│   └── factor_factory.py
 ├── analysis/
 │   ├── __init__.py
 │   ├── factor_test.py
-│   └── performance.py
+│   ├── performance.py
+│   ├── backtester.py
+│   └── risk_analysis.py
 ├── visualization/
 │   ├── __init__.py
-│   └── plotter.py
-└── utils/
-    ├── __init__.py
-    └── helpers.py
+│   ├── plotter.py
+│   └── report_generator.py
+├── utils/
+│   ├── __init__.py
+│   ├── helpers.py
+│   ├── monitoring.py
+│   └── risk_utils.py
+└── output/
+    ├── plots/
+    └── reports/

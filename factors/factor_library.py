@@ -1,90 +1,85 @@
-### 5. 因子库 (factors/factor_library.py)
-
 import pandas as pd
 import numpy as np
 from factors.factor_base import Factor
 
 
 class MomentumFactor(Factor):
-    def __init__(self, lookback_period=21):
+    def __init__(self, lookback_period: int = 21, skip_period: int = 1):
         super().__init__(f"MOM_{lookback_period}",
                          f"Momentum factor with {lookback_period} days lookback")
         self.lookback_period = lookback_period
+        self.skip_period = skip_period
+        self.parameters = {'lookback_period': lookback_period, 'skip_period': skip_period}
 
-    def calculate(self, data):
+    def calculate(self, data: dict) -> pd.DataFrame:
+        self.validate_data(data, ['close'])
         close_prices = data['close']
-        momentum = close_prices.pct_change(self.lookback_period)
-        return momentum
+        # Skip recent period to avoid short-term reversal
+        momentum = (close_prices / close_prices.shift(self.lookback_period + self.skip_period) - 1)
+        return self.winsorize_factor(momentum)
 
 
 class ValueFactor(Factor):
     def __init__(self):
-        super().__init__("VALUE", "Value factor based on P/E ratio")
+        super().__init__("VALUE_PE", "Value factor based on P/E ratio")
 
-    def calculate(self, data):
-        if 'peTTM' in data:
-            # Use inverse of P/E (E/P) as value measure
-            value = 1 / data['peTTM']
-            # Handle infinite values
-            value = value.replace([np.inf, -np.inf], np.nan)
-            return value
-        else:
-            raise ValueError("P/E data not available")
+    def calculate(self, data: dict) -> pd.DataFrame:
+        self.validate_data(data, ['peTTM'])
+        # Use inverse of P/E (E/P) as value measure
+        value = 1 / data['peTTM']
+        # Handle infinite values
+        value = value.replace([np.inf, -np.inf], np.nan)
+        return self.winsorize_factor(value)
 
 
 class SizeFactor(Factor):
     def __init__(self):
         super().__init__("SIZE", "Size factor based on market capitalization")
 
-    def calculate(self, data):
-        if 'close' in data and 'volume' in data:
-            # Simple proxy for market cap: price * volume
-            market_cap = data['close'] * data['volume']
-            # Use log market cap
-            size = np.log(market_cap)
-            return size
-        else:
-            raise ValueError("Close price or volume data not available")
+    def calculate(self, data: dict) -> pd.DataFrame:
+        self.validate_data(data, ['close', 'volume'])
+        # Simple proxy for market cap: price * volume
+        market_cap = data['close'] * data['volume']
+        # Use log market cap
+        size = np.log(market_cap)
+        return self.winsorize_factor(size)
 
 
 class VolatilityFactor(Factor):
-    def __init__(self, lookback_period=21):
+    def __init__(self, lookback_period: int = 21):
         super().__init__(f"VOL_{lookback_period}",
                          f"Volatility factor with {lookback_period} days lookback")
         self.lookback_period = lookback_period
+        self.parameters = {'lookback_period': lookback_period}
 
-    def calculate(self, data):
+    def calculate(self, data: dict) -> pd.DataFrame:
+        self.validate_data(data, ['close'])
         returns = data['close'].pct_change()
         volatility = returns.rolling(window=self.lookback_period).std()
-        return volatility
+        return self.winsorize_factor(volatility)
 
 
 class QualityFactor(Factor):
     def __init__(self):
-        super().__init__("QUALITY", "Quality factor based on profitability")
+        super().__init__("QUALITY_TURN", "Quality factor based on turnover")
 
-    def calculate(self, data):
-        # Simple quality proxy: high turnover might indicate good quality
-        if 'turn' in data:
-            quality = data['turn']
-            return quality
-        else:
-            raise ValueError("Turnover data not available")
+    def calculate(self, data: dict) -> pd.DataFrame:
+        self.validate_data(data, ['turn'])
+        # Higher turnover might indicate better quality (liquidity)
+        quality = data['turn']
+        return self.winsorize_factor(quality)
 
 
-# Factor factory class
-class FactorFactory:
-    @staticmethod
-    def create_factor(factor_type, **kwargs):
-        if factor_type == "momentum":
-            return MomentumFactor(**kwargs)
-        elif factor_type == "value":
-            return ValueFactor()
-        elif factor_type == "size":
-            return SizeFactor()
-        elif factor_type == "volatility":
-            return VolatilityFactor(**kwargs)
-        elif factor_type == "quality":
-            return QualityFactor()
-        else:
-            raise ValueError(f"Unknown factor type: {factor_type}")
+class ReversalFactor(Factor):
+    def __init__(self, lookback_period: int = 1):
+        super().__init__(f"REV_{lookback_period}",
+                         f"Reversal factor with {lookback_period} days lookback")
+        self.lookback_period = lookback_period
+        self.parameters = {'lookback_period': lookback_period}
+
+    def calculate(self, data: dict) -> pd.DataFrame:
+        self.validate_data(data, ['close'])
+        returns = data['close'].pct_change(self.lookback_period)
+        # Negative sign for reversal (past losers become winners)
+        reversal = -returns
+        return self.winsorize_factor(reversal)

@@ -20,7 +20,7 @@ class FactorTester:
                 continue
 
             try:
-                # 使用rank而不是qcut来处理重复值
+                # Use rank instead of qcut to handle duplicates
                 ranks = daily_factors.rank(method='first')
                 quantile_labels = pd.cut(ranks, bins=self.quantiles, labels=False, duplicates='drop')
                 quantile_data.loc[date] = quantile_labels
@@ -35,14 +35,14 @@ class FactorTester:
 
         for quantile in range(self.quantiles):
             quantile_mask = factor_quantiles == quantile
-            # 等权重组合收益
+            # Equal-weighted portfolio returns
             quantile_ret = forward_returns[quantile_mask].mean(axis=1)
             quantile_returns[quantile] = quantile_ret
 
         return pd.DataFrame(quantile_returns)
 
     def ic_analysis(self, factor_data, forward_returns):
-        """Information Coefficient analysis - 使用Rank IC"""
+        """Information Coefficient analysis - using Rank IC"""
         ic_series = pd.Series(index=factor_data.index, dtype=float)
 
         for date in factor_data.index:
@@ -54,7 +54,7 @@ class FactorTester:
                 factor_values = factor_values[common_stocks]
                 returns = returns[common_stocks]
 
-                # 使用Spearman秩相关 (Rank IC)
+                # Use Spearman rank correlation (Rank IC)
                 try:
                     ic = stats.spearmanr(factor_values, returns)[0]
                     if not np.isnan(ic):
@@ -77,10 +77,10 @@ class FactorTester:
                 factor_values = factor_values[common_stocks]
                 returns = returns[common_stocks]
 
-                # 标准化因子值
+                # Standardize factor values
                 factor_values = (factor_values - factor_values.mean()) / factor_values.std()
 
-                # 简单横截面回归
+                # Simple cross-sectional regression
                 try:
                     X = np.column_stack([np.ones(len(factor_values)), factor_values])
                     beta = np.linalg.lstsq(X, returns, rcond=None)[0]
@@ -91,7 +91,7 @@ class FactorTester:
         return factor_returns
 
     def calculate_turnover_analysis(self, factor_quantiles):
-        """计算因子组合换手率"""
+        """Calculate factor portfolio turnover"""
         turnover = pd.Series(index=factor_quantiles.index[1:], dtype=float)
 
         for i in range(1, len(factor_quantiles)):
@@ -100,11 +100,31 @@ class FactorTester:
 
             common_dates = current.dropna().index.intersection(previous.dropna().index)
             if len(common_dates) > 0:
-                # 计算组合变化率
+                # Calculate portfolio change rate
                 changes = (current[common_dates] != previous[common_dates]).mean()
                 turnover.iloc[i - 1] = changes
 
         return turnover
+
+    def calculate_hit_ratio(self, factor_data, forward_returns):
+        """Calculate hit ratio (percentage of correct predictions)"""
+        hit_ratios = []
+
+        for date in factor_data.index:
+            factor_values = factor_data.loc[date].dropna()
+            returns = forward_returns.loc[date].dropna()
+
+            common_stocks = factor_values.index.intersection(returns.index)
+            if len(common_stocks) > 5:
+                factor_values = factor_values[common_stocks]
+                returns = returns[common_stocks]
+
+                # Calculate hit ratio
+                correct_predictions = (factor_values > factor_values.median()) == (returns > returns.median())
+                hit_ratio = correct_predictions.mean()
+                hit_ratios.append(hit_ratio)
+
+        return np.mean(hit_ratios) if hit_ratios else 0
 
     def run_comprehensive_test(self, factor_data, forward_returns):
         """Run comprehensive factor tests"""
@@ -123,6 +143,9 @@ class FactorTester:
         results['ic_tstat'] = stats.ttest_1samp(valid_ic, 0)[0] if len(valid_ic) > 1 else 0
         results['ic_positive_ratio'] = (valid_ic > 0).sum() / len(valid_ic)
 
+        # Hit Ratio
+        results['hit_ratio'] = self.calculate_hit_ratio(factor_data, forward_returns)
+
         # Quantile Analysis
         factor_quantiles = self.create_factor_quantiles(factor_data)
         quantile_returns = self.calculate_quantile_returns(factor_quantiles, forward_returns)
@@ -136,11 +159,15 @@ class FactorTester:
                                                                                                           'tmb_std'] != 0 else 0
             results['tmb_tstat'] = stats.ttest_1samp(top_minus_bottom.dropna(), 0)[0] if len(
                 top_minus_bottom.dropna()) > 1 else 0
+
+            # Quantile spread statistics
+            results['quantile_spread'] = quantile_returns.iloc[:, -1].mean() - quantile_returns.iloc[:, 0].mean()
         else:
             results['tmb_mean_return'] = 0
             results['tmb_std'] = 0
             results['tmb_sharpe'] = 0
             results['tmb_tstat'] = 0
+            results['quantile_spread'] = 0
 
         # Factor returns
         factor_returns = self.factor_returns_analysis(factor_data, forward_returns)
